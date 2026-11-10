@@ -1,0 +1,3 @@
+# Solo para conservar la conexión local anterior con SQL Server.
+-r requirements.txt
+mssql-django>=2.0.0,<2.1

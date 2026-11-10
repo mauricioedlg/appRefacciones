@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Aprobaciones Pendientes</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      background-color: purple;
+      color: white;
+    }
+    header { margin-bottom: 20px; }
+    button.volver {
+      background: #4B0082;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button.volver:hover { background: #360062; }
+    h2 { margin-bottom: 10px; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #7c007c;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th { background: #4B0082; }
+    tbody tr:hover {
+      background: #9f009f;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .no-data {
+      margin-top: 20px;
+      color: #ffd966;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+  </header>
+
+  <h2 id="tituloPantalla">Aprobaciones Pendientes</h2>
+  <p>Seleccione un registro para ver detalles y aprobar o rechazar.</p>
+
+  <div id="mensaje" class="no-data" style="display:none;">No hay solicitudes pendientes.</div>
+
+  <table id="tablaPendientes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Descripción</th>
+        <th>Solicitante</th>
+        <th>Estatus Actual</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const rol = localStorage.getItem('descripcionRol');
+    
+    // SEGURIDAD: Solo permite entrar a los dos gerentes
+    if (rol !== 'Gerente Mantenimiento' && rol !== 'Gerente Planta') {
+        alert("Acceso denegado.");
+        window.location.href = 'bienvenida.html';
+    }
+
+    // CAMBIAR TITULO SEGUN ROL
+    if (rol === 'Gerente Planta') {
+        document.getElementById('tituloPantalla').textContent = "Aprobaciones Pendientes (Gerente Planta)";
+    }
+
+    async function cargarPendientes() {
+      const tbody = document.querySelector("#tablaPendientes tbody");
+      const mensaje = document.getElementById("mensaje");
+      const tabla = document.getElementById("tablaPendientes");
+      tbody.innerHTML = "";
+
+      let urlApi = "";
+      // LOGICA PARA ELEGIR API
+      if (rol === 'Gerente Mantenimiento') {
+          urlApi = "/api/pendientes_aprobacion/";
+      } else {
+          urlApi = "/api/pendientes_aprobacion_planta/";
+      }
+
+      try {
+        const res = await fetch(urlApi);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          tabla.style.display = "none";
+          mensaje.style.display = "block";
+          return;
+        }
+
+        tabla.style.display = "table";
+        mensaje.style.display = "none";
+
+        data.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.onclick = () => {
+            localStorage.setItem("aprobacion_id", r.id);
+            window.location.href = "detalle_aprobacion.html";
+          };
+
+          // Mostrar status relevante
+          let statusText = "";
+          if (rol === 'Gerente Mantenimiento') statusText = "Pendiente Mtto";
+          else statusText = "Mtto: SI / Planta: PENDIENTE";
+
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.descripcion}</td>
+            <td>${r.nombre_solicitante}</td>
+            <td>${statusText}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        alert("Error cargando pendientes: " + err.message);
+      }
+    }
+
+    cargarPendientes();
+  </script>
+
+</body>
+</html>

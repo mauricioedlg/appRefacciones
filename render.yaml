@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: refacciones
+    runtime: python
+    plan: free
+    buildCommand: bash build.sh
+    startCommand: bash start.sh
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: TRUST_PROXY_HEADERS
+        value: "True"
+      - key: WEB_CONCURRENCY
+        value: "2"

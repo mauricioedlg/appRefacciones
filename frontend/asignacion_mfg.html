@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Asignación MFG Pendiente</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      background-color: purple;
+      color: white;
+    }
+    header { margin-bottom: 20px; }
+    button.volver {
+      background: #4B0082;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button.volver:hover { background: #360062; }
+    h2 { margin-bottom: 10px; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #7c007c;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th { background: #4B0082; }
+    tbody tr:hover {
+      background: #9f009f;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .no-data {
+      margin-top: 20px;
+      color: #ffd966;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+  </header>
+
+  <h2>Pendientes de Asignar MFG (Almacén)</h2>
+  <p>Seleccione un registro para asignar su número de manufactura (MFG).</p>
+
+  <div id="mensaje" class="no-data" style="display:none;">No hay refacciones pendientes de MFG.</div>
+
+  <table id="tablaPendientes">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Descripción</th>
+        <th>Solicitante</th>
+        <th>No. Parte Prov.</th>
+        <th>Aprobación Planta</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    // 1. OBTENER ROL Y LIMPIAR ESPACIOS (TRIM)
+    let rol = localStorage.getItem('descripcionRol');
+    if (rol) {
+        rol = rol.trim(); // Quita espacios al inicio y final por si SQL los agregó
+    }
+
+    // 2. VALIDACIÓN SEGURA
+    if (rol !== 'Almacenista') {
+        // Alerta informativa para depuración
+        alert("Acceso denegado.\nTu rol detectado es: '" + rol + "'\nSe requiere: 'Almacenista'");
+        window.location.href = 'bienvenida.html';
+    }
+
+    async function cargarPendientes() {
+      const tbody = document.querySelector("#tablaPendientes tbody");
+      const mensaje = document.getElementById("mensaje");
+      const tabla = document.getElementById("tablaPendientes");
+      tbody.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/pendientes_asignacion_mfg/");
+        const data = await res.json();
+
+        if (data.length === 0) {
+          tabla.style.display = "none";
+          mensaje.style.display = "block";
+          return;
+        }
+
+        tabla.style.display = "table";
+        mensaje.style.display = "none";
+
+        data.forEach(r => {
+          const tr = document.createElement("tr");
+          tr.onclick = () => {
+            localStorage.setItem("asignacion_id", r.id);
+            window.location.href = "detalle_asignacion.html";
+          };
+
+          tr.innerHTML = `
+            <td>${r.id}</td>
+            <td>${r.descripcion}</td>
+            <td>${r.nombre_solicitante}</td>
+            <td>${r.numero_parte_proveedor}</td>
+            <td>${r.aprobacion_planta}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        alert("Error cargando pendientes: " + err.message);
+      }
+    }
+
+    cargarPendientes();
+  </script>
+
+</body>
+</html>

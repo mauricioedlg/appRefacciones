@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Todos los Registros</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      padding: 20px;
+      background-color: purple;
+      color: white;
+    }
+    header {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .volver {
+      background: #4B0082;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    .volver:hover {
+      background: #360062;
+    }
+
+    .top-bar {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap; 
+    }
+
+    #searchInput {
+      padding: 8px;
+      width: 300px;
+      border-radius: 4px;
+      border: none;
+    }
+
+    .top-bar select {
+      padding: 8px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      color: black;
+    }
+
+    #btnLimpiar {
+      padding: 8px 12px;
+      background: #e0e0e0;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #btnLimpiar:hover {
+      background: #ccc;
+    }
+
+    #btnExcel {
+      padding: 8px 12px;
+      background: #ffd966;
+      color: black;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      background-color: #800080;
+    }
+
+    th, td {
+      border: 1px solid #cccccc55;
+      padding: 8px;
+      color: white;
+    }
+
+    th {
+      background-color: #4B0082;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #7a007a;
+    }
+
+    tr:nth-child(odd) td {
+      background-color: #8a008a;
+    }
+
+    .loader {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+    <h2>Todos los Registros</h2>
+  </header>
+
+  <div class="top-bar">
+    <input id="searchInput" type="text" placeholder="Buscar por usuario, descripción, No. Parte...">
+    
+    <select id="filtroSitio">
+        <option value="">Sitio (Todos)</option>
+        <option value="Torreon">Torreon</option>
+        <option value="Celaya">Celaya</option>
+        <option value="MBC">MBC</option>
+    </select>
+
+    <select id="filtroFamilia">
+      <option value="">Familia (Todos)</option>
+      <option value="Bombas">Bombas</option>
+      <option value="Válvulas">Válvulas</option>
+      <option value="Maquinaria">Maquinaria</option>
+      <option value="Partes de Maquinaria">Partes de Maquinaria</option>
+      <option value="Quimicos">Quimicos</option>
+      <option value="Lubricantes">Lubricantes</option>
+      <option value="Filtros">Filtros</option>
+      <option value="Motor Electrico">Motor Electrico</option>
+    </select>
+
+    <select id="filtroNacionalidad">
+      <option value="">Nacionalidad (Todas)</option>
+      <option value="Nacional">Nacional</option>
+      <option value="Internacional">Internacional</option>
+    </select>
+    
+    <button id="btnLimpiar" onclick="limpiarFiltros()">Limpiar filtros</button>
+    <button id="btnExcel" onclick="descargarExcelGlobal()">Descargar registros</button>
+  </div>
+
+  <div id="loader" class="loader">Cargando registros...</div>
+  <table id="tablaRegistros">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Sitio</th> <th>Solicitante</th> <th>Aprobado Mtto</th>
+        <th>Aprobado Planta</th>
+        <th>Número MFG</th>
+        <th>Cotizado</th>
+        <th>Descripción</th>
+        <th>Costo</th>
+        <th>Área</th>
+        <th>Consumo</th>
+        <th>Frecuencia</th>
+        <th>Unidad</th>
+        <th>Cantidad</th>
+        <th>Observación</th>
+        <th>Número Parte</th>
+        <th>Marca Proveedor</th>
+        <th>Equipos a Usar</th>
+        <th>Familia</th>
+        <th>Reemplazable</th>
+        <th>Reduce Velocidad</th>
+        <th>Existe Riesgo</th>
+        <th>Nacionalidad</th>
+        <th>Página Web</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let registrosOriginal = [];
+    
+    async function cargarRegistrosGlobales() {
+      const loader = document.getElementById("loader");
+      const tbody = document.querySelector("#tablaRegistros tbody");
+      tbody.innerHTML = "";
+      loader.style.display = "block";
+
+      const response = await fetch("/api/todas_refacciones/");
+      const data = await response.json();
+
+      registrosOriginal = data;
+      loader.style.display = "none";
+
+      mostrarTabla(registrosOriginal);
+    }
+
+    function mostrarTabla(lista) {
+      const tbody = document.querySelector("#tablaRegistros tbody");
+      tbody.innerHTML = "";
+
+      lista.forEach(ref => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${ref.id}</td>
+          <td>${ref.nombre_sitio || 'N/A'}</td> <td>${ref.nombre_solicitante || 'Desc'}</td> <td>${ref.aprobacion_mtto || 'PENDIENTE'}</td>
+          <td>${ref.aprobacion_planta || 'PENDIENTE'}</td>
+          <td>${ref.numero_mfg || 'PENDIENTE'}</td>
+          <td>${ref.cotizado || 'PENDIENTE'}</td>
+          <td>${ref.descripcion}</td>
+          <td>${ref.costo}</td>
+          <td>${ref.area}</td>
+          <td>${ref.consumo}</td>
+          <td>${ref.frecuencia}</td>
+          <td>${ref.unidad}</td>
+          <td>${ref.cantidad}</td>
+          <td>${ref.observacion}</td>
+          <td>${ref.numero_parte_proveedor}</td>
+          <td>${ref.marca_proveedor}</td>
+          <td>${ref.equipos_a_usar}</td>
+          <td>${ref.familia}</td>
+          <td>${ref.reemplazable}</td>
+          <td>${ref.reduce_velocidad}</td>
+          <td>${ref.existe_riesgo}</td>
+          <td>${ref.nacionalidad}</td>
+          <td>${ref.pagina_web ? `<a href="${ref.pagina_web}" target="_blank">Abrir</a>` : "N/A"}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // --- LÓGICA DE FILTRADO ---
+    const searchInput = document.getElementById("searchInput");
+    const filtroSitio = document.getElementById("filtroSitio"); // NUEVO
+    const filtroFamilia = document.getElementById("filtroFamilia");
+    const filtroNacionalidad = document.getElementById("filtroNacionalidad");
+
+    function aplicarFiltrosGlobales() {
+      const texto = searchInput.value.toLowerCase();
+      const sitioSeleccionado = filtroSitio.value; // NUEVO
+      const familiaSeleccionada = filtroFamilia.value;
+      const nacionalidadSeleccionada = filtroNacionalidad.value;
+
+      const filtrados = registrosOriginal.filter(ref => {
+        // ACTUALIZADO: Búsqueda incluye nombre solicitante
+        const cumpleTexto = (ref.descripcion || "").toLowerCase().includes(texto) ||
+                            (ref.numero_parte_proveedor || "").toLowerCase().includes(texto) ||
+                            (ref.nombre_solicitante || "").toLowerCase().includes(texto) ||
+                            (ref.numero_mfg || "").toLowerCase().includes(texto);
+        
+        // Nuevo Filtro de Sitio
+        const cumpleSitio = sitioSeleccionado === "" || (ref.nombre_sitio === sitioSeleccionado);
+
+        const cumpleFamilia = familiaSeleccionada === "" || ref.familia === familiaSeleccionada;
+        const cumpleNacionalidad = nacionalidadSeleccionada === "" || ref.nacionalidad === nacionalidadSeleccionada;
+
+        return cumpleTexto && cumpleSitio && cumpleFamilia && cumpleNacionalidad;
+      });
+
+      mostrarTabla(filtrados);
+    }
+
+    function limpiarFiltros() {
+      searchInput.value = "";
+      filtroSitio.value = "";
+      filtroFamilia.value = "";
+      filtroNacionalidad.value = "";
+      aplicarFiltrosGlobales();
+    }
+
+    searchInput.addEventListener("input", aplicarFiltrosGlobales);
+    filtroSitio.addEventListener("change", aplicarFiltrosGlobales); // Listener
+    filtroFamilia.addEventListener("change", aplicarFiltrosGlobales);
+    filtroNacionalidad.addEventListener("change", aplicarFiltrosGlobales);
+    
+    function descargarExcelGlobal() {
+      window.open("/api/descargar_excel_global/");
+    }
+
+    cargarRegistrosGlobales();
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Bienvenida</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 0;
+      background-color: purple;
+      color: white;
+    }
+    header {
+      background: #4B0082;
+      color: white;
+      padding: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 10px;
+      text-decoration: none;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+    .saludo {
+      text-align: center;
+      margin-top: 50px;
+      font-size: 24px;
+    }
+    button {
+      background: #c00;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #900;
+    }
+
+    .bell-container {
+      position: relative;
+      cursor: pointer;
+      margin-right: 15px;
+      font-size: 24px;
+    }
+    .badge {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      background-color: red;
+      color: white;
+      border-radius: 50%;
+      padding: 2px 6px;
+      font-size: 12px;
+      font-weight: bold;
+      display: none;
+    }
+    .nav-items {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>Proyecto Web</div>
+    
+    <div class="nav-items">
+      <nav>
+        <a href="formulario.html">Formulario</a>
+        <a href="mis_altas.html">Mis Altas</a>
+        <a href="corregir_altas.html">Corregir Mis Altas</a>
+        <a href="todos_registros.html">Altas Globales</a>
+        
+        <a id="btnGerente" href="aprobaciones_pendientes.html" style="display:none; color: yellow; font-weight: bold;">Aprobaciones Pendientes</a>
+
+        <a id="btnAsignarMFG" href="asignacion_mfg.html" style="display:none; color: #00ff00; font-weight: bold;">Asignar MFG</a>
+        <a id="btnTablaMFG" href="lista_con_mfg.html" style="display:none; color: cyan; font-weight: bold;">Lista con MFG (Fotos)</a>
+
+        <a id="btnCotizaciones" href="cotizaciones_pendientes.html" style="display:none; color: orange; font-weight: bold;">Cotizaciones Pendientes</a>
+        <a id="btnCotizadas" href="refacciones_cotizadas.html" style="display:none; color: #ffcc00; font-weight: bold;">Refacciones Cotizadas</a>
+
+      </nav>
+
+      <div class="bell-container" onclick="window.location.href='notificaciones.html'">
+        🔔
+        <span id="badgeNotif" class="badge">0</span>
+      </div>
+
+      <button onclick="logout()">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <div class="saludo">
+    <h1 id="saludo"></h1>
+  </div>
+
+  <script>
+    const nombre = localStorage.getItem('nombreUsuario');
+    const rolDescripcion = localStorage.getItem('descripcionRol');
+    const usuarioId = localStorage.getItem('usuarioId');
+
+    if (nombre) {
+      document.getElementById('saludo').textContent =
+        `Hola ${nombre}, bienvenido al app de refacciones`;
+      
+      // LOGICA DE BOTONES SEGUN ROL
+      if (rolDescripcion) {
+          const rol = rolDescripcion.trim();
+
+          if (rol === 'Gerente Mantenimiento' || rol === 'Gerente Planta') {
+             document.getElementById('btnGerente').style.display = 'inline';
+          }
+
+          if (rol === 'Almacenista') {
+             document.getElementById('btnAsignarMFG').style.display = 'inline';
+             document.getElementById('btnTablaMFG').style.display = 'inline';
+          }
+
+          // Lógica para Comprador
+          if (rol === 'Comprador') {
+             document.getElementById('btnCotizaciones').style.display = 'inline';
+             document.getElementById('btnCotizadas').style.display = 'inline';
+          }
+      }
+
+      cargarBadge();
+    } else {
+      window.location.href = 'index.html';
+    }
+
+    async function cargarBadge() {
+      try {
+        const res = await fetch(`/api/notificaciones/${usuarioId}/`);
+        const data = await res.json();
+        const noLeidas = data.filter(n => !n.leido).length;
+        const badge = document.getElementById('badgeNotif');
+        if (noLeidas > 0) {
+          badge.textContent = noLeidas;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

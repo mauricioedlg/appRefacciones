@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Refacciones Cotizadas</title>
+  <style>
+    body { font-family: Arial; margin: 20px; background-color: purple; color: white; }
+    button.volver { background: #4B0082; color: white; border: none; padding: 8px 12px; cursor: pointer; }
+    
+    .top-bar { margin-top: 10px; display: flex; gap: 10px; align-items: center; }
+    #searchInput { padding: 8px; width: 300px; border-radius: 4px; border: none; }
+    #btnExcel { padding: 8px 12px; background: #ffd966; color: black; border: none; border-radius: 4px; cursor: pointer; }
+
+    table { width: 100%; border-collapse: collapse; background: #800080; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #4B0082; }
+    tr:nth-child(even) td { background-color: #7a007a; }
+  </style>
+</head>
+<body>
+  <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+  <h2>Refacciones Cotizadas</h2>
+  <p>Historial de refacciones con estatus COTIZADO: SI</p>
+
+  <div class="top-bar">
+    <input type="text" id="searchInput" placeholder="Buscar por MFG, descripción...">
+    <button id="btnExcel" onclick="descargarExcel()">Descargar Excel</button>
+  </div>
+
+  <table id="tablaDatos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>MFG</th>
+        <th>Descripción</th>
+        <th>No. Parte</th>
+        <th>Familia</th>
+        <th>Cotizado</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let registrosOriginal = [];
+
+    async function cargar() {
+      const tbody = document.querySelector("#tablaDatos tbody");
+      tbody.innerHTML = "";
+      try {
+        const res = await fetch("/api/lista_cotizadas/");
+        const data = await res.json();
+        registrosOriginal = data;
+        mostrarTabla(data);
+      } catch (err) { alert("Error cargando datos"); }
+    }
+
+    function mostrarTabla(lista) {
+      const tbody = document.querySelector("#tablaDatos tbody");
+      tbody.innerHTML = "";
+      lista.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.numero_mfg}</td>
+          <td>${r.descripcion}</td>
+          <td>${r.numero_parte_proveedor}</td>
+          <td>${r.familia}</td>
+          <td>${r.cotizado}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Buscador Simple
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      const texto = e.target.value.toLowerCase();
+      const filtrados = registrosOriginal.filter(r => 
+        (r.numero_mfg || "").toLowerCase().includes(texto) ||
+        (r.descripcion || "").toLowerCase().includes(texto)
+      );
+      mostrarTabla(filtrados);
+    });
+
+    // Excel Simple (Frontend)
+    function descargarExcel() {
+       let csv = "ID,MFG,Descripcion,NoParte,Familia,Cotizado\n";
+       registrosOriginal.forEach(r => {
+           csv += `${r.id},${r.numero_mfg},${r.descripcion},${r.numero_parte_proveedor},${r.familia},${r.cotizado}\n`;
+       });
+       const blob = new Blob([csv], { type: 'text/csv' });
+       const a = document.createElement('a');
+       a.href = window.URL.createObjectURL(blob);
+       a.download = 'refacciones_cotizadas.csv';
+       a.click();
+    }
+
+    cargar();
+  </script>
+</body>
+</html>

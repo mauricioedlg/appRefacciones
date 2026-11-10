@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Proyecto Web</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      margin-top: 100px;
+      background-color: purple;
+      color: white;
+    }
+    input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 240px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #4B0082;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #360062;
+    }
+    .error {
+      color: yellow;
+      height: 20px;
+    }
+
+    /* Overlay que cubre toda la pantalla */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    /* Loader grande en medio */
+    .loader {
+      border: 12px solid rgba(255, 255, 255, 0.3);
+      border-top: 12px solid #ffffff;
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>APLICACION DE REFACCIONES</h1>
+  <h2>Iniciar Sesión</h2>
+
+  <input type="text" id="username" placeholder="Usuario" autocomplete="username">
+  <input type="password" id="contrasena" placeholder="Contraseña" autocomplete="current-password">
+
+  <button onclick="login()">Entrar</button>
+
+  <p class="error" id="errorMsg"></p>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loader"></div>
+  </div>
+
+  <script>
+    async function login() {
+      const username = document.getElementById('username').value.trim();
+      const contrasena = document.getElementById('contrasena').value.trim();
+      const errorMsg = document.getElementById('errorMsg');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+
+      errorMsg.textContent = '';
+      if (!username || !contrasena) {
+        errorMsg.textContent = 'Ingresa usuario y contraseña.';
+        return;
+      }
+
+      loadingOverlay.style.display = "flex";
+      try {
+        const response = await fetch('/api/login/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, contrasena })
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          localStorage.setItem('nombreUsuario', data.nombre);
+          localStorage.setItem('usuarioId', data.usuarioId);
+          // NUEVO: Guardamos el rol y descripción para validaciones
+          localStorage.setItem('userRol', data.rol);
+          localStorage.setItem('descripcionRol', data.descripcion_rol);
+
+          setTimeout(() => {
+            window.location.href = 'bienvenida.html';
+          }, 2000);
+        } else {
+          errorMsg.textContent = data.error || 'Error al iniciar sesión';
+          loadingOverlay.style.display = "none";
+        }
+      } catch (e) {
+        errorMsg.textContent = 'No se pudo conectar al servidor.';
+        loadingOverlay.style.display = "none";
+      }
+    }
+  </script>
+</body>
+</html>

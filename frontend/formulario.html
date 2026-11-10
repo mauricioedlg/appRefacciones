@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Alta de Refacciones</title>
+  <style>
+    body { font-family: Arial; margin: 20px; background-color: purple; color: white; }
+    header { margin-bottom: 20px; }
+    button.volver { background: #4B0082; color: white; border: none; padding: 8px 12px; cursor: pointer; }
+    button.volver:hover { background: #360062; }
+    label { display: block; margin-top: 10px; font-weight: bold; }
+    input, select { display: block; margin: 5px 0 15px 0; padding: 8px; width: 300px; border: 1px solid #ccc; border-radius: 4px; }
+    button[type="submit"] { margin-top: 15px; padding: 10px 20px; background: #4B0082; color: white; border: none; cursor: pointer; }
+    button[type="submit"]:hover { background: #360062; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+  </header>
+
+  <h2>Registrar Refacción</h2>
+  
+  <form id="formRefaccion" enctype="multipart/form-data">
+    <label>Descripción</label> <input type="text" name="descripcion">
+    <label>Costo</label> <input type="number" name="costo" step="0.01">
+    <label>Área</label> <input type="text" name="area">
+    <label>Consumo</label> <input type="text" name="consumo">
+
+    <label>Frecuencia</label>
+    <select name="frecuencia">
+      <option value="">Seleccione...</option>
+      <option value="Diario">Diario</option>
+      <option value="Semanal">Semanal</option>
+      <option value="Quincenal">Quincenal</option>
+      <option value="Mensual">Mensual</option>
+      <option value="Bimestral">Bimestral</option>
+      <option value="Trimestral">Trimestral</option>
+      <option value="Semestral">Semestral</option>
+      <option value="Anual">Anual</option>
+    </select>
+
+    <label>Unidad</label>
+    <select name="unidad">
+      <option value="">Seleccione...</option>
+      <option value="PZ">PZ</option>
+      <option value="KG">KG</option>
+      <option value="LBS">LBS</option>
+      <option value="ML">ML</option>
+      <option value="M">M</option>
+      <option value="L">L</option>
+      <option value="G">G</option>
+      <option value="OZ">OZ</option>
+    </select>
+
+    <label>Cantidad</label> <input type="number" name="cantidad">
+    <label>Observación</label> <input type="text" name="observacion">
+    <label>Número parte proveedor</label> <input type="text" name="numero_parte_proveedor" required>
+    <label>Marca proveedor</label> <input type="text" name="marca_proveedor">
+    <label>Equipos a usar</label> <input type="text" name="equipos_a_usar">
+
+    <label>Familia</label>
+    <select id="familia" name="familia" onchange="verificarFamilia()">
+      <option value="">Seleccione...</option>
+      <option value="Bombas">Bombas</option>
+      <option value="Válvulas">Válvulas</option>
+      <option value="Maquinaria">Maquinaria</option>
+      <option value="Partes de Maquinaria">Partes de Maquinaria</option>
+      <option value="Quimicos">Quimicos</option>
+      <option value="Lubricantes">Lubricantes</option>
+      <option value="Filtros">Filtros</option>
+      <option value="Motor Electrico">Motor Electrico</option>
+    </select>
+
+    <div id="divPdf" class="hidden">
+      <label style="color: yellow;">Subir Ficha Técnica (PDF)</label>
+      <input type="file" id="archivo_pdf" name="archivo_pdf" accept=".pdf">
+    </div>
+
+    <label>Reemplazable</label>
+    <select name="reemplazable">
+      <option value="">Seleccione...</option><option value="SI">SI</option><option value="NO">NO</option>
+    </select>
+
+    <label>Reduce velocidad</label>
+    <select name="reduce_velocidad">
+      <option value="">Seleccione...</option><option value="SI">SI</option><option value="NO">NO</option>
+    </select>
+
+    <label>Existe riesgo</label>
+    <select name="existe_riesgo">
+      <option value="">Seleccione...</option><option value="SI">SI</option><option value="NO">NO</option>
+    </select>
+
+    <label>Nacionalidad</label>
+    <select name="nacionalidad">
+      <option value="">Seleccione...</option><option value="Nacional">Nacional</option><option value="Internacional">Internacional</option>
+    </select>
+
+    <label>Página web</label> <input type="text" name="pagina_web">
+
+    <button type="submit">Guardar</button>
+  </form>
+
+  <script>
+    function verificarFamilia() {
+      const familia = document.getElementById('familia').value;
+      const divPdf = document.getElementById('divPdf');
+      if (familia === 'Quimicos') {
+        divPdf.style.display = 'block';
+      } else {
+        divPdf.style.display = 'none';
+        document.getElementById('archivo_pdf').value = ''; 
+      }
+    }
+
+    document.getElementById('formRefaccion').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const usuarioId = localStorage.getItem('usuarioId');
+      if (!usuarioId) {
+        alert("Debes iniciar sesión primero");
+        return;
+      }
+
+      // IMPORTANTE: FormData empaqueta archivos correctamente
+      const formData = new FormData(e.target);
+      formData.append('usuario_id', usuarioId);
+
+      const response = await fetch('/api/refacciones/', {
+        method: 'POST',
+        body: formData 
+      });
+
+      const data = await response.json();
+      alert(data.mensaje || data.error);
+      if (response.ok) {
+        e.target.reset();
+        verificarFamilia();
+      }
+    });
+  </script>
+</body>
+</html>

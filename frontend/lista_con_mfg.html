@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Refacciones con MFG</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+      background-color: purple;
+      color: white;
+    }
+    header { margin-bottom: 20px; }
+    button.volver {
+      background: #4B0082;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    button.volver:hover { background: #360062; }
+    
+    .top-bar {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #searchInput {
+      padding: 8px;
+      width: 300px;
+      border-radius: 4px; border: none;
+    }
+    #btnExcel {
+      padding: 8px 12px;
+      background: #ffd966; color: black;
+      border: none; border-radius: 4px; cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #7c007c;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+    th { background: #4B0082; }
+    tbody tr:hover {
+      background: #9f009f;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .no-data {
+      margin-top: 20px;
+      color: #ffd966;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <button class="volver" onclick="window.location.href='bienvenida.html'">← Menú Principal</button>
+  </header>
+
+  <h2>Refacciones con MFG Asignado</h2>
+  <p>Tabla exclusiva de Almacén. Haz click para ver detalles, subir foto o descargar PDF.</p>
+
+  <div class="top-bar">
+    <input type="text" id="searchInput" placeholder="Buscar por MFG, descripción o No. Parte...">
+    <button id="btnExcel" onclick="descargarExcel()">Descargar Excel</button>
+  </div>
+
+  <div id="mensaje" class="no-data" style="display:none;">No hay registros con MFG.</div>
+
+  <table id="tablaDatos">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>MFG</th>
+        <th>Descripción</th>
+        <th>No. Parte</th>
+        <th>Familia</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    let registrosOriginal = [];
+
+    async function cargar() {
+      const tbody = document.querySelector("#tablaDatos tbody");
+      const mensaje = document.getElementById("mensaje");
+      const tabla = document.getElementById("tablaDatos");
+      tbody.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/refacciones_con_mfg/");
+        const data = await res.json();
+        registrosOriginal = data;
+
+        if (data.length === 0) {
+          tabla.style.display = "none";
+          mensaje.style.display = "block";
+          return;
+        }
+        mostrarTabla(data);
+
+      } catch (err) {
+        alert("Error cargando datos: " + err.message);
+      }
+    }
+
+    function mostrarTabla(lista) {
+      const tbody = document.querySelector("#tablaDatos tbody");
+      tbody.innerHTML = "";
+      
+      lista.forEach(r => {
+        const tr = document.createElement("tr");
+        tr.onclick = () => {
+          localStorage.setItem("detalle_foto_id", r.id);
+          window.location.href = "detalle_foto_pdf.html";
+        };
+
+        tr.innerHTML = `
+          <td>${r.id}</td>
+          <td>${r.numero_mfg}</td>
+          <td>${r.descripcion}</td>
+          <td>${r.numero_parte_proveedor}</td>
+          <td>${r.familia}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // BUSCADOR
+    const searchInput = document.getElementById("searchInput");
+    searchInput.addEventListener("input", () => {
+      const texto = searchInput.value.toLowerCase();
+      const filtrados = registrosOriginal.filter(r => 
+        (r.numero_mfg || "").toLowerCase().includes(texto) ||
+        (r.descripcion || "").toLowerCase().includes(texto) ||
+        (r.numero_parte_proveedor || "").toLowerCase().includes(texto)
+      );
+      mostrarTabla(filtrados);
+    });
+
+    // EXCEL SIMPLE (Desde el frontend con lo que tiene la API)
+    function descargarExcel() {
+       // Reutilizamos la lógica global o creamos un CSV simple
+       let csv = "ID,MFG,Descripcion,NoParte,Familia\n";
+       registrosOriginal.forEach(r => {
+           csv += `${r.id},${r.numero_mfg},${r.descripcion},${r.numero_parte_proveedor},${r.familia}\n`;
+       });
+       const blob = new Blob([csv], { type: 'text/csv' });
+       const url = window.URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url;
+       a.download = 'refacciones_mfg.csv';
+       a.click();
+    }
+
+    cargar();
+  </script>
+
+</body>
+</html>

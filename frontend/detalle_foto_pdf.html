@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Detalle Refacción</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 30px;
+      background-color: purple;
+      color: white;
+    }
+    .card {
+      background: #4B0082;
+      padding: 30px;
+      border-radius: 8px;
+      max-width: 800px;
+      margin: 0 auto;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    /* SECCION FOTO RE-DISEÑADA */
+    .foto-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Centrar todo horizontalmente */
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #360062;
+      border-radius: 8px;
+    }
+
+    .foto-preview {
+      max-width: 300px;
+      max-height: 300px;
+      border: 2px solid #ccc;
+      display: none; /* Se muestra con JS si existe */
+      margin-bottom: 15px; /* Espacio entre imagen y botones */
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    
+    /* Input de archivo oculto visualmente pero funcional */
+    .custom-file-upload {
+      display: inline-block;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #9370DB; /* Morado claro (MediumPurple) */
+      color: white;
+      border-radius: 5px;
+      font-weight: bold;
+      transition: background 0.3s;
+      margin-bottom: 10px; /* Separación con el botón de subir */
+      text-align: center;
+      width: 200px;
+    }
+
+    .custom-file-upload:hover {
+      background-color: #8A2BE2; /* Un poco más oscuro al pasar mouse */
+    }
+
+    /* Ocultamos el input real feo */
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Botón de acción (Subir/Actualizar) */
+    .btn-accion-foto {
+      padding: 10px 20px;
+      background-color: #9370DB; /* Morado claro */
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 200px;
+      font-size: 16px;
+    }
+
+    .btn-accion-foto:hover {
+      background-color: #8A2BE2;
+    }
+    
+    h1 {
+      text-align: center;
+      color: #ffd966;
+      border-bottom: 2px solid #660066;
+      padding-bottom: 10px;
+    }
+    ul {
+      list-style-type: disc;
+      padding-left: 20px;
+      font-size: 18px;
+      line-height: 1.6;
+    }
+    li strong { color: #e0e0e0; }
+
+    .btn-pdf {
+      display: block;
+      width: 100%;
+      text-align: center;
+      background: #ff5722;
+      color: white;
+      padding: 15px;
+      margin-top: 20px;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+      box-sizing: border-box; /* Para que el padding no rompa el ancho */
+    }
+    .btn-pdf:hover { background: #e64a19; }
+
+    .btn-volver {
+      background-color: #6c757d;
+      color: white;
+      border: none; padding: 10px; cursor: pointer;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="btn-volver" onclick="window.location.href='lista_con_mfg.html'">← Volver a la lista</button>
+
+  <div class="card">
+    
+    <div class="foto-container">
+      <h3>Foto de la Refacción</h3>
+      
+      <img id="imgFoto" class="foto-preview" src="" alt="Foto Refacción">
+      
+      <label for="inputFoto" class="custom-file-upload">
+          📂 Seleccionar imagen
+      </label>
+      <input type="file" id="inputFoto" accept="image/*" onchange="mostrarNombre()">
+
+      <button id="btnSubir" class="btn-accion-foto" onclick="subirFoto()">Subir foto</button>
+      
+      <span id="nombreArchivo" style="margin-top:5px; font-size:12px; color:#ddd;"></span>
+    </div>
+
+    <h1 id="tituloDescripcion">Cargando...</h1>
+
+    <ul id="listaDetalles"></ul>
+
+    <div id="containerPdf" style="display:none;">
+        <a id="linkPdf" class="btn-pdf" href="#" target="_blank">📄 Descargar Ficha Técnica (PDF)</a>
+    </div>
+
+  </div>
+
+  <script>
+    const id = localStorage.getItem("detalle_foto_id");
+    if (!id) window.location.href = 'lista_con_mfg.html';
+
+    async function cargarDetalle() {
+      try {
+        const res = await fetch(`/api/refaccion/${id}/`);
+        const data = await res.json();
+
+        // 1. Mostrar Texto
+        document.getElementById("tituloDescripcion").textContent = data.descripcion || "Sin descripción";
+        const ul = document.getElementById("listaDetalles");
+        ul.innerHTML = `
+          <li><strong>ID:</strong> ${data.id}</li>
+          <li><strong>MFG:</strong> ${data.numero_mfg}</li>
+          <li><strong>Familia:</strong> ${data.familia}</li>
+          <li><strong>Solicitado por:</strong> ${data.nombre_solicitante}</li>
+          <li><strong>No. Parte:</strong> ${data.numero_parte_proveedor}</li>
+          <li><strong>Marca:</strong> ${data.marca_proveedor || 'N/A'}</li>
+          <li><strong>Ubicación/Área:</strong> ${data.area || 'N/A'}</li>
+          <li><strong>Costo:</strong> $${data.costo || 0}</li>
+          <li><strong>Observación:</strong> ${data.observacion || 'N/A'}</li>
+        `;
+
+        // 2. Manejo de Foto
+        const img = document.getElementById("imgFoto");
+        const btn = document.getElementById("btnSubir");
+
+        // URL con timestamp para evitar caché del navegador
+        const urlFoto = `/api/ver_foto/${id}/?t=${new Date().getTime()}`;
+        
+        // Comprobamos si la imagen carga correctamente
+        const testImg = new Image();
+        testImg.src = urlFoto;
+        
+        testImg.onload = function() {
+            // SI HAY FOTO: Mostramos imagen y cambiamos texto del botón
+            img.src = urlFoto;
+            img.style.display = "block";
+            btn.textContent = "Actualizar foto";
+        };
+        
+        testImg.onerror = function() {
+            // NO HAY FOTO: Ocultamos imagen y botón dice "Subir"
+            img.style.display = "none";
+            btn.textContent = "Subir foto";
+        };
+
+        // 3. Manejo de PDF (Solo Quimicos)
+        if (data.familia === 'Quimicos') {
+            document.getElementById("containerPdf").style.display = "block";
+            document.getElementById("linkPdf").href = `/api/descargar_pdf/${id}/`;
+        } else {
+            document.getElementById("containerPdf").style.display = "none";
+        }
+
+      } catch (err) {
+        alert("Error al cargar detalle");
+      }
+    }
+
+    // Muestra el nombre del archivo seleccionado al lado del botón
+    function mostrarNombre() {
+        const input = document.getElementById('inputFoto');
+        const span = document.getElementById('nombreArchivo');
+        if(input.files.length > 0) {
+            span.textContent = "Archivo: " + input.files[0].name;
+        } else {
+            span.textContent = "";
+        }
+    }
+
+    async function subirFoto() {
+      const input = document.getElementById("inputFoto");
+      if (input.files.length === 0) {
+        alert("Selecciona una imagen primero");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("foto", input.files[0]);
+
+      try {
+        const res = await fetch(`/api/subir_foto/${id}/`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+           alert("Foto guardada correctamente");
+           // Limpiamos el input y recargamos
+           input.value = ""; 
+           document.getElementById('nombreArchivo').textContent = "";
+           cargarDetalle(); 
+        } else {
+           alert("Error: " + data.error);
+        }
+      } catch (e) {
+        alert("Error de conexión");
+      }
+    }
+
+    cargarDetalle();
+  </script>
+
+</body>
+</html>
