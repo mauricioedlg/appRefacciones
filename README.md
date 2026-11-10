@@ -20,11 +20,11 @@ if (-not (Test-Path -LiteralPath .venv\Scripts\python.exe)) {
 }
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item -LiteralPath .env.example -Destination .env
+    New-Item -ItemType File -Path .env | Out-Null
 }
 ~~~
 
-Edita `.env` con tu `DATABASE_URL`, una `SECRET_KEY` privada y `DJANGO_DEBUG=True` para desarrollo. Después ejecuta:
+El comando crea un `.env` local vacío si todavía no existe. Edita ese archivo con tu `DATABASE_URL`, una `SECRET_KEY` privada y `DJANGO_DEBUG=True` para desarrollo; consulta el [formato y las variables locales](docs/neon-render.md#3-probar-django-desde-windows). Mantén `.env` fuera del repositorio. Después ejecuta:
 
 ~~~powershell
 .\.venv\Scripts\python.exe manage.py check

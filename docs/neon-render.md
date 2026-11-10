@@ -26,7 +26,7 @@ Este archivo reproduce el esquema y los ejemplos del `scriptSQL.sql` entregado. 
 
 En **Connect** de Neon, selecciona la misma rama, base y rol. Copia la cadena de conexión PostgreSQL; para la aplicación puedes usar la opción de conexión agrupada, cuyo host contiene `-pooler`. Conserva los parámetros de seguridad, incluido `sslmode=require`.
 
-Guarda la cadena como `DATABASE_URL` en tu `.env` local y, más adelante, en el formulario privado de variables de Render. No la pegues en el chat, en archivos HTML ni en el repositorio. `.env.example` contiene nombres de variables y ejemplos; `.env` contiene tus valores privados.
+Guarda la cadena como `DATABASE_URL` en tu `.env` local y, más adelante, en el formulario privado de variables de Render. No la pegues en el chat, en archivos HTML ni en el repositorio. El archivo `.env` se crea en tu equipo y contiene tus valores privados.
 
 La configuración de Django selecciona PostgreSQL cuando existe `DATABASE_URL`. Exige TLS, desactiva los cursores del servidor para trabajar con la conexión agrupada y comprueba las conexiones reutilizadas. Sin esa variable, el modo de desarrollo conserva SQL Server.
 
@@ -40,20 +40,22 @@ if (-not (Test-Path -LiteralPath .venv\Scripts\python.exe)) {
 }
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 if (-not (Test-Path -LiteralPath .env)) {
-    Copy-Item -LiteralPath .env.example -Destination .env
+    New-Item -ItemType File -Path .env | Out-Null
 }
 ~~~
 
-El comando de copia conserva un `.env` que ya existe. Edita ese archivo con tus valores:
+El comando crea un `.env` vacío solo si no existe. Abre ese archivo en el editor y usa este formato para el desarrollo local:
 
-| Variable | Desarrollo local |
-| --- | --- |
-| `DATABASE_URL` | Cadena privada de Neon con TLS |
-| `DJANGO_DEBUG` | `True` |
-| `SECRET_KEY` | Valor aleatorio privado para desarrollo |
-| `ALLOWED_HOSTS` | `127.0.0.1,localhost` |
-| `CSRF_TRUSTED_ORIGINS` | Orígenes locales indicados en `.env.example` |
-| `TRUST_PROXY_HEADERS` | `False` |
+~~~dotenv
+DATABASE_URL=postgresql://USUARIO:CONTRASENA@HOST_NEON/BASE?sslmode=require
+DJANGO_DEBUG=True
+SECRET_KEY=
+ALLOWED_HOSTS=127.0.0.1,localhost
+CSRF_TRUSTED_ORIGINS=http://127.0.0.1:8000,http://localhost:8000
+TRUST_PROXY_HEADERS=False
+~~~
+
+La URL anterior contiene marcadores de ejemplo. Sustitúyela por la cadena completa de **Connect** en Neon, conservando sus parámetros TLS, y completa `SECRET_KEY` antes de arrancar Django. Mantén este archivo local fuera del repositorio.
 
 Puedes generar una clave local con este comando y guardar el resultado en `SECRET_KEY` dentro de `.env`:
 
